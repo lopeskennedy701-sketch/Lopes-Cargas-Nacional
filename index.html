@@ -17,7 +17,6 @@
         input { padding: 8px; width: 60%; border-radius: 4px; border: none; color: #000; }
         button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; font-weight: bold; }
         
-        /* Ícone do Caminhão no Mapa */
         .caminhao-icon { font-size: 28px; text-shadow: 0 0 5px black; }
         
         .timeline { border-left: 2px solid #334155; margin-left: 10px; padding-left: 20px; margin-top: 15px; }
@@ -61,20 +60,26 @@
     <script>
         const bancoDeDados = {
             "BR2646431958792": {
-                status: "Em trânsito",
-                lat: -16.6869, lng: -49.2648,
-                trajeto: [[-25.3854, -49.1983], [-16.6869, -49.2648]], 
+                status: "Em trânsito para São Luís - MA",
+                // Posição atual do caminhão (Goiânia)
+                posicaoAtual: [-16.6869, -49.2648], 
+                // Rota: [Curitiba, Goiânia, São Luís]
+                trajeto: [
+                    [-25.4284, -49.2733], 
+                    [-16.6869, -49.2648], 
+                    [-2.5307, -44.3068]
+                ], 
                 eventos: [
-                    { data: "10 Jul 2026 - 14:47", msg: "Seu pedido saiu do centro logístico: Goiânia - GO" },
-                    { data: "08 Jul 2026 - 08:49", msg: "Pedido postado em: Campina Grande do Sul - PR" }
+                    { data: "10 Jul 2026 - 17:47", msg: "Em trânsito para: São Luís - MA" },
+                    { data: "09 Jul 2026 - 16:36", msg: "Recebido no centro de triagem: Goiânia - GO" },
+                    { data: "08 Jul 2026 - 01:44", msg: "Recebido no centro de triagem: Curitiba - PR" }
                 ]
             }
         };
 
-        const mapa = L.map('map').setView([-15.0, -50.0], 4);
+        const mapa = L.map('map').setView([-12.0, -48.0], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
 
-        // Ícone personalizado de caminhão
         const caminhaoIcon = L.divIcon({
             html: '<div class="caminhao-icon">🚚</div>',
             className: 'custom-div-icon',
@@ -105,16 +110,17 @@
                     </div>
                 `).join('');
 
-                mapa.setView([info.lat, info.lng], 6);
+                mapa.setView([-10.0, -48.0], 5);
                 
                 if (marcadorCaminhao) mapa.removeLayer(marcadorCaminhao);
                 if (linhaTrajeto) mapa.removeLayer(linhaTrajeto);
 
-                // Adiciona a rota e o caminhão
-                linhaTrajeto = L.polyline(info.trajeto, {color: '#38bdf8', weight: 3, dashArray: '5, 10'}).addTo(mapa);
-                marcadorCaminhao = L.marker([info.lat, info.lng], {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>Lopes Cargo:</b> " + info.status).openPopup();
+                // Desenha a linha completa da rota
+                linhaTrajeto = L.polyline(info.trajeto, {color: '#f59e0b', weight: 4, dashArray: '10, 10'}).addTo(mapa);
+                // Coloca o ícone do caminhão no ponto atual
+                marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>Lopes Cargo:</b> " + info.status).openPopup();
                 
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota e Caminhão ativos</div>`;
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota completa plotada</div>`;
             } else if (codigo.length > 5) {
                 container.style.display = "block";
                 statusDisplay.innerText = "Rastreando encomenda...";
