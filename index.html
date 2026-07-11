@@ -15,13 +15,9 @@
         
         .painel-status { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; padding: 12px; border-radius: 12px; width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); max-height: 70vh; display: flex; flex-direction: column; }
         
-        /* Estilo do Rastreamento */
         .rastreio-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center; }
-        input { padding: 8px; width: 60%; border-radius: 4px; border: none; }
-        button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; }
-        
-        .container-cards { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
-        .card-caminhao { background: rgba(255,255,255,0.02); padding: 8px; border-radius: 8px; border: 1px solid #334155; }
+        input { padding: 8px; width: 60%; border-radius: 4px; border: none; color: #000; }
+        button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; font-weight: bold; }
         
         #painel-logs { height: 140px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; }
         .log-lista { height: 100px; overflow-y: auto; font-family: monospace; font-size: 10px; color: #34d399; }
@@ -39,12 +35,11 @@
                 <div class="rastreio-box">
                     <input type="text" id="codigoInput" placeholder="Código (Ex: LC001)">
                     <button onclick="rastrear()">Buscar</button>
-                    <div id="resultado" style="margin-top:8px; font-size: 12px; color: #38bdf8;"></div>
+                    <div id="resultado" style="margin-top:8px; font-size: 13px; color: #38bdf8; font-weight: bold;"></div>
                 </div>
 
-                <div class="container-cards" id="container-cards"></div>
                 <div class="botoes-comando">
-                    <button class="btn" style="background:#dc2626; width:100%;" onclick="dispararPanicoGral()">🚨 PÂNICO</button>
+                    <button style="background:#dc2626; width:100%;" onclick="alert('Alerta enviado à central!')">🚨 PÂNICO</button>
                 </div>
             </div>
             <div id="map"></div>
@@ -58,31 +53,39 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // --- BANCO DE DADOS DE RASTREIO ---
+        // --- BANCO DE DADOS ---
         const bancoDeDados = {
-            "LC001": "Status: Em trânsito - Localização: Rio de Janeiro/RJ",
-            "LC002": "Status: Saiu para entrega - Localização: Bacabal/MA",
-            "LC003": "Status: Entregue - Recebido por: Destinatário"
+            "LC001": { status: "Em trânsito", lat: -22.9068, lng: -43.1729, msg: "Rio de Janeiro/RJ" },
+            "LC002": { status: "Saiu para entrega", lat: -4.2514, lng: -44.4757, msg: "Bacabal/MA" },
+            "LC003": { status: "Entregue", lat: -4.2400, lng: -44.4800, msg: "Destinatário final" }
         };
+
+        // --- INICIALIZAÇÃO DO MAPA ---
+        const mapa = L.map('map').setView([-8.0, -44.0], 5);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
+
+        let marcadorAtual = null;
 
         function rastrear() {
             const codigo = document.getElementById('codigoInput').value.toUpperCase().trim();
             const res = document.getElementById('resultado');
-            res.innerText = bancoDeDados[codigo] ? bancoDeDados[codigo] : "Código não encontrado.";
-        }
+            const log = document.getElementById('log-lista');
 
-        // --- MOTOR DO MAPA E FROTA (Mantido o seu código original abaixo) ---
-        // (O seu código de mapa e lógica de frota entra aqui)
-        // ...
-        
-        // Exemplo de log básico
-        function gerarLog(tipo, msg) {
-            const lista = document.getElementById('log-lista');
-            lista.innerHTML += `<div>[${tipo}] ${msg}</div>`;
+            if (bancoDeDados[codigo]) {
+                const info = bancoDeDados[codigo];
+                res.innerText = `Status: ${info.status} - Local: ${info.msg}`;
+                
+                // Atualizar Mapa
+                mapa.setView([info.lat, info.lng], 12);
+                if (marcadorAtual) mapa.removeLayer(marcadorAtual);
+                marcadorAtual = L.marker([info.lat, info.lng]).addTo(mapa).bindPopup(info.status).openPopup();
+                
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Busca: ${codigo} - Sucesso</div>`;
+            } else {
+                res.innerText = "Código não encontrado.";
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Erro: Código ${codigo} inválido</div>`;
+            }
         }
-        
-        const mapa = L.map('map').setView([-8.0, -44.0], 5);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
     </script>
 </body>
 </html>
