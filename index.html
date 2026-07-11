@@ -17,8 +17,10 @@
         input { padding: 8px; width: 60%; border-radius: 4px; border: none; color: #000; }
         button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; font-weight: bold; }
         
+        /* Ícone do Caminhão */
         .caminhao-icon { font-size: 28px; text-shadow: 0 0 5px black; }
         
+        /* Timeline */
         .timeline { border-left: 2px solid #334155; margin-left: 10px; padding-left: 20px; margin-top: 15px; }
         .timeline-item { margin-bottom: 15px; position: relative; font-size: 12px; }
         .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #38bdf8; border-radius: 50%; }
@@ -46,7 +48,7 @@
                     <div id="timeline" class="timeline"></div>
                     <a id="btnRastreioReal" href="#" target="_blank">Rastrear em Rede Global</a>
                 </div>
-                <button style="background:#dc2626; width:100%; margin-top:15px;" onclick="alert('Alerta enviado!')">🚨 PÂNICO</button>
+                <button style="background:#dc2626; width:100%; margin-top:15px;" onclick="alert('Alerta de segurança enviado!')">🚨 PÂNICO</button>
             </div>
             <div id="map"></div>
         </div>
@@ -61,13 +63,11 @@
         const bancoDeDados = {
             "BR2646431958792": {
                 status: "Em trânsito para São Luís - MA",
-                // Posição atual do caminhão (Goiânia)
                 posicaoAtual: [-16.6869, -49.2648], 
-                // Rota: [Curitiba, Goiânia, São Luís]
                 trajeto: [
-                    [-25.4284, -49.2733], 
-                    [-16.6869, -49.2648], 
-                    [-2.5307, -44.3068]
+                    [-25.4284, -49.2733], // Curitiba
+                    [-16.6869, -49.2648], // Goiânia
+                    [-2.5307, -44.3068]   // São Luís
                 ], 
                 eventos: [
                     { data: "10 Jul 2026 - 17:47", msg: "Em trânsito para: São Luís - MA" },
@@ -110,24 +110,24 @@
                     </div>
                 `).join('');
 
-                mapa.setView([-10.0, -48.0], 5);
-                
                 if (marcadorCaminhao) mapa.removeLayer(marcadorCaminhao);
                 if (linhaTrajeto) mapa.removeLayer(linhaTrajeto);
 
-                // Desenha a linha completa da rota
+                // Linha de trajeto
                 linhaTrajeto = L.polyline(info.trajeto, {color: '#f59e0b', weight: 4, dashArray: '10, 10'}).addTo(mapa);
-                // Coloca o ícone do caminhão no ponto atual
+                // Marcador do caminhão
                 marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>Lopes Cargo:</b> " + info.status).openPopup();
                 
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota completa plotada</div>`;
+                mapa.fitBounds(info.trajeto); // Foca o mapa na rota completa
+                
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota carregada com sucesso.</div>`;
             } else if (codigo.length > 5) {
                 container.style.display = "block";
-                statusDisplay.innerText = "Rastreando encomenda...";
+                statusDisplay.innerText = "Buscando...";
                 timeline.innerHTML = "";
                 btn.href = `https://www.17track.net/pt/track?nums=${codigo}`;
                 btn.style.display = "block";
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Buscando na rede global</div>`;
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Redirecionado para rede externa.</div>`;
             } else {
                 alert("Por favor, digite um código válido.");
             }
