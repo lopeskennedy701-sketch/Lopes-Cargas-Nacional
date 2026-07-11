@@ -12,14 +12,17 @@
         #conteudo-principal { display: flex; flex: 1; position: relative; width: 100%; height: calc(100vh - 140px); }
         #map { flex: 1; height: 100%; width: 100%; z-index: 1; }
         
-        .painel-status { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; padding: 12px; border-radius: 12px; width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); max-height: 70vh; display: flex; flex-direction: column; }
+        .painel-status { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; padding: 12px; border-radius: 12px; width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); max-height: 80vh; overflow-y: auto; }
         .rastreio-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center; }
         input { padding: 8px; width: 60%; border-radius: 4px; border: none; color: #000; }
         button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; font-weight: bold; }
         
-        /* Estilo do botão de redirecionamento */
+        /* Timeline */
+        .timeline { border-left: 2px solid #334155; margin-left: 10px; padding-left: 20px; margin-top: 15px; }
+        .timeline-item { margin-bottom: 15px; position: relative; font-size: 12px; }
+        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #38bdf8; border-radius: 50%; }
+        
         #btnRastreioReal { display: none; margin-top: 10px; background: #28a745; padding: 8px; text-decoration: none; color: white; border-radius: 4px; text-align: center; font-weight: bold; font-size: 13px; }
-
         #painel-logs { height: 140px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; }
         .log-lista { height: 100px; overflow-y: auto; font-family: monospace; font-size: 10px; color: #34d399; }
         
@@ -33,12 +36,16 @@
             <div class="painel-status">
                 <h3>📡 Lopes Cargas Nacional</h3>
                 <div class="rastreio-box">
-                    <input type="text" id="codigoInput" placeholder="Ex: LC001 ou BR123456789BR">
+                    <input type="text" id="codigoInput" placeholder="Ex: BR2646431958792">
                     <button onclick="rastrear()">Buscar</button>
-                    <div id="resultado" style="margin-top:8px; font-size: 13px; color: #38bdf8; font-weight: bold;"></div>
+                </div>
+                
+                <div id="resultado-container" style="display:none;">
+                    <div id="status-display" style="margin-bottom:5px; font-weight:bold; color:#38bdf8;"></div>
+                    <div id="timeline" class="timeline"></div>
                     <a id="btnRastreioReal" href="#" target="_blank">Rastrear nos Correios</a>
                 </div>
-                <button style="background:#dc2626; width:100%;" onclick="alert('Alerta enviado!')">🚨 PÂNICO</button>
+                <button style="background:#dc2626; width:100%; margin-top:15px;" onclick="alert('Alerta enviado!')">🚨 PÂNICO</button>
             </div>
             <div id="map"></div>
         </div>
@@ -50,39 +57,60 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Banco de dados com histórico detalhado
         const bancoDeDados = {
-            "LC001": { status: "Em trânsito", lat: -22.9068, lng: -43.1729, msg: "Rio de Janeiro/RJ" },
-            "BR123456789BR": { status: "Saiu para entrega", lat: -4.2514, lng: -44.4757, msg: "Bacabal/MA" },
-            "BR987654321BR": { status: "Aguardando postagem", lat: -15.7801, lng: -47.9292, msg: "Brasília/DF" }
+            "BR2646431958792": {
+                status: "Em trânsito",
+                lat: -16.6869, lng: -49.2648, // Goiânia
+                eventos: [
+                    { data: "10 Jul 2026 - 14:47", msg: "Seu pedido saiu do centro logístico: Goiânia - GO" },
+                    { data: "10 Jul 2026 - 01:33", msg: "Seu pedido está em separação no centro logístico: Goiânia - GO" },
+                    { data: "09 Jul 2026 - 13:36", msg: "Seu pedido chegou ao centro logístico: Goiânia - GO" },
+                    { data: "08 Jul 2026 - 08:49", msg: "Seu pedido saiu do centro logístico: Campina Grande do Sul - PR" }
+                ]
+            }
         };
 
-        const mapa = L.map('map').setView([-8.0, -44.0], 5);
+        const mapa = L.map('map').setView([-15.0, -50.0], 4);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
 
         let marcadorAtual = null;
 
         function rastrear() {
             const codigo = document.getElementById('codigoInput').value.toUpperCase().trim();
-            const res = document.getElementById('resultado');
-            const log = document.getElementById('log-lista');
+            const container = document.getElementById('resultado-container');
+            const timeline = document.getElementById('timeline');
+            const statusDisplay = document.getElementById('status-display');
             const btn = document.getElementById('btnRastreioReal');
-
-            btn.style.display = "none"; // Esconde o botão ao iniciar nova busca
+            const log = document.getElementById('log-lista');
 
             if (bancoDeDados[codigo]) {
                 const info = bancoDeDados[codigo];
-                res.innerHTML = `Status: ${info.status}<br>Local: ${info.msg}`;
+                container.style.display = "block";
+                btn.style.display = "none";
+                statusDisplay.innerText = "Status: " + info.status;
+                
+                timeline.innerHTML = info.eventos.map(e => `
+                    <div class="timeline-item">
+                        <div style="color:#aaa; font-size:10px;">${e.data}</div>
+                        <div>${e.msg}</div>
+                    </div>
+                `).join('');
+
                 mapa.setView([info.lat, info.lng], 12);
                 if (marcadorAtual) mapa.removeLayer(marcadorAtual);
                 marcadorAtual = L.marker([info.lat, info.lng]).addTo(mapa).bindPopup(info.status).openPopup();
+                
                 log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Localizado</div>`;
             } else if (codigo.startsWith("BR") && codigo.length > 10) {
-                res.innerText = "Código em processamento logístico.";
+                container.style.display = "block";
+                statusDisplay.innerText = "Em processamento logístico.";
+                timeline.innerHTML = "";
                 btn.href = `https://rastreamento.correios.com.br/app/index.php?codigo=${codigo}`;
-                btn.style.display = "block"; // Mostra o botão para rastreio externo
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Encaminhado para Correios</div>`;
+                btn.style.display = "block";
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Encaminhado p/ Correios</div>`;
             } else {
-                res.innerText = "Código não encontrado.";
+                alert("Código não encontrado.");
             }
         }
     </script>
