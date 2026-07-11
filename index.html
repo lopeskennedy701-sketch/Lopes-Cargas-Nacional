@@ -61,11 +61,11 @@
             "BR2646431958792": {
                 status: "Em trânsito",
                 lat: -16.6869, lng: -49.2648,
+                // Coordenadas para desenhar a linha do trajeto: [Origem, Destino]
+                trajeto: [[-25.3854, -49.1983], [-16.6869, -49.2648]], 
                 eventos: [
                     { data: "10 Jul 2026 - 14:47", msg: "Seu pedido saiu do centro logístico: Goiânia - GO" },
-                    { data: "10 Jul 2026 - 01:33", msg: "Seu pedido está em separação no centro logístico: Goiânia - GO" },
-                    { data: "09 Jul 2026 - 13:36", msg: "Seu pedido chegou ao centro logístico: Goiânia - GO" },
-                    { data: "08 Jul 2026 - 08:49", msg: "Seu pedido saiu do centro logístico: Campina Grande do Sul - PR" }
+                    { data: "08 Jul 2026 - 08:49", msg: "Pedido postado em: Campina Grande do Sul - PR" }
                 ]
             }
         };
@@ -74,6 +74,7 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
 
         let marcadorAtual = null;
+        let linhaTrajeto = null;
 
         function rastrear() {
             const codigo = document.getElementById('codigoInput').value.toUpperCase().trim();
@@ -96,16 +97,20 @@
                     </div>
                 `).join('');
 
-                mapa.setView([info.lat, info.lng], 12);
+                mapa.setView([info.lat, info.lng], 6);
+                
                 if (marcadorAtual) mapa.removeLayer(marcadorAtual);
+                if (linhaTrajeto) mapa.removeLayer(linhaTrajeto);
+
+                // Adiciona a linha (polyline)
+                linhaTrajeto = L.polyline(info.trajeto, {color: '#38bdf8', weight: 4, dashArray: '10, 10'}).addTo(mapa);
                 marcadorAtual = L.marker([info.lat, info.lng]).addTo(mapa).bindPopup(info.status).openPopup();
                 
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Localizado internamente</div>`;
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota plotada</div>`;
             } else if (codigo.length > 5) {
                 container.style.display = "block";
                 statusDisplay.innerText = "Rastreando encomenda...";
                 timeline.innerHTML = "";
-                // Redireciona para o 17Track, que é o padrão mundial para qualquer transportadora
                 btn.href = `https://www.17track.net/pt/track?nums=${codigo}`;
                 btn.style.display = "block";
                 log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Redirecionado p/ Rede Global</div>`;
