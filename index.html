@@ -43,7 +43,7 @@
                 <div id="resultado-container" style="display:none;">
                     <div id="status-display" style="margin-bottom:5px; font-weight:bold; color:#38bdf8;"></div>
                     <div id="timeline" class="timeline"></div>
-                    <a id="btnRastreioReal" href="#" target="_blank">Rastrear nos Correios</a>
+                    <a id="btnRastreioReal" href="#" target="_blank">Rastrear em Rede Global</a>
                 </div>
                 <button style="background:#dc2626; width:100%; margin-top:15px;" onclick="alert('Alerta enviado!')">🚨 PÂNICO</button>
             </div>
@@ -57,7 +57,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Banco de dados interno para customização de encomendas
         const bancoDeDados = {
             "BR2646431958792": {
                 status: "Em trânsito",
@@ -101,16 +100,17 @@
                 if (marcadorAtual) mapa.removeLayer(marcadorAtual);
                 marcadorAtual = L.marker([info.lat, info.lng]).addTo(mapa).bindPopup(info.status).openPopup();
                 
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Localizado</div>`;
-            } else if (codigo.startsWith("BR") && codigo.length > 10) {
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Localizado internamente</div>`;
+            } else if (codigo.length > 5) {
                 container.style.display = "block";
-                statusDisplay.innerText = "Em processamento logístico.";
+                statusDisplay.innerText = "Rastreando encomenda...";
                 timeline.innerHTML = "";
-                btn.href = `https://rastreamento.correios.com.br/app/index.php?codigo=${codigo}`;
+                // Redireciona para o 17Track, que é o padrão mundial para qualquer transportadora
+                btn.href = `https://www.17track.net/pt/track?nums=${codigo}`;
                 btn.style.display = "block";
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Encaminhado p/ Correios</div>`;
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Redirecionado p/ Rede Global</div>`;
             } else {
-                alert("Código não encontrado.");
+                alert("Por favor, digite um código válido.");
             }
         }
     </script>
