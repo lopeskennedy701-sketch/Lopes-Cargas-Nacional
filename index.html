@@ -17,6 +17,9 @@
         input { padding: 8px; width: 60%; border-radius: 4px; border: none; color: #000; }
         button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; font-weight: bold; }
         
+        /* Estilo do botão de redirecionamento */
+        #btnRastreioReal { display: none; margin-top: 10px; background: #28a745; padding: 8px; text-decoration: none; color: white; border-radius: 4px; text-align: center; font-weight: bold; font-size: 13px; }
+
         #painel-logs { height: 140px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; }
         .log-lista { height: 100px; overflow-y: auto; font-family: monospace; font-size: 10px; color: #34d399; }
         
@@ -33,6 +36,7 @@
                     <input type="text" id="codigoInput" placeholder="Ex: LC001 ou BR123456789BR">
                     <button onclick="rastrear()">Buscar</button>
                     <div id="resultado" style="margin-top:8px; font-size: 13px; color: #38bdf8; font-weight: bold;"></div>
+                    <a id="btnRastreioReal" href="#" target="_blank">Rastrear nos Correios</a>
                 </div>
                 <button style="background:#dc2626; width:100%;" onclick="alert('Alerta enviado!')">🚨 PÂNICO</button>
             </div>
@@ -61,6 +65,9 @@
             const codigo = document.getElementById('codigoInput').value.toUpperCase().trim();
             const res = document.getElementById('resultado');
             const log = document.getElementById('log-lista');
+            const btn = document.getElementById('btnRastreioReal');
+
+            btn.style.display = "none"; // Esconde o botão ao iniciar nova busca
 
             if (bancoDeDados[codigo]) {
                 const info = bancoDeDados[codigo];
@@ -70,8 +77,10 @@
                 marcadorAtual = L.marker([info.lat, info.lng]).addTo(mapa).bindPopup(info.status).openPopup();
                 log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Localizado</div>`;
             } else if (codigo.startsWith("BR") && codigo.length > 10) {
-                res.innerText = "Em processamento logístico.";
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Em trânsito postal</div>`;
+                res.innerText = "Código em processamento logístico.";
+                btn.href = `https://rastreamento.correios.com.br/app/index.php?codigo=${codigo}`;
+                btn.style.display = "block"; // Mostra o botão para rastreio externo
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Encaminhado para Correios</div>`;
             } else {
                 res.innerText = "Código não encontrado.";
             }
