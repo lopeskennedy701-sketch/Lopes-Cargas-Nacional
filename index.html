@@ -69,7 +69,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Adicione novas empresas aqui mudando o campo 'transportadora'
+        // ADICIONE SEUS CÓDIGOS AQUI
         const bancoDeDados = {
             "BR2646431958792": {
                 transportadora: "Shopee Xpress",
@@ -80,6 +80,16 @@
                     { data: "10 Jul 2026 - 17:47", msg: "Em trânsito para: São Luís - MA" },
                     { data: "09 Jul 2026 - 16:36", msg: "Recebido no centro de triagem: Goiânia - GO" },
                     { data: "08 Jul 2026 - 01:44", msg: "Recebido no centro de triagem: Curitiba - PR" }
+                ]
+            },
+            "BR264303092934J": {
+                transportadora: "SPX Express",
+                status: "Em rota de entrega",
+                posicaoAtual: [-2.5307, -44.3068], 
+                trajeto: [[-16.6869, -49.2648], [-2.5307, -44.3068]], 
+                eventos: [
+                    { data: "11 Jul 2026 - 09:00", msg: "Saiu para entrega" },
+                    { data: "10 Jul 2026 - 14:00", msg: "Recebido no centro de distribuição" }
                 ]
             }
         };
@@ -121,7 +131,7 @@
                 if (linhaTrajeto) mapa.removeLayer(linhaTrajeto);
 
                 linhaTrajeto = L.polyline(info.trajeto, {color: '#f59e0b', weight: 4, dashArray: '10, 10'}).addTo(mapa);
-                marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>Lopes Cargo:</b> " + info.status).openPopup();
+                marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>" + info.transportadora + ":</b> " + info.status).openPopup();
                 
                 mapa.fitBounds(info.trajeto);
                 log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota carregada (${info.transportadora}).</div>`;
