@@ -2,87 +2,66 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Lopes Cargas | Sistema de Monitoramento</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lopes Cargas | Acesso</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; font-family: 'Segoe UI', sans-serif; background: #0b0f19; color: #fff; overflow: hidden; }
-        #layout { display: flex; width: 100%; height: 100vh; flex-direction: column; }
-        #conteudo-principal { display: flex; flex: 1; position: relative; width: 100%; }
-        #map { flex: 1; height: 100%; z-index: 1; }
-        
-        .painel { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #334155; padding: 15px; border-radius: 12px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .input-group { display: flex; gap: 5px; margin-bottom: 10px; }
-        input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #fff; }
-        button { padding: 10px 15px; border-radius: 6px; border: none; background: #38bdf8; color: #0b0f19; font-weight: bold; cursor: pointer; }
-        
-        .admin-view { border-top: 2px solid #f59e0b; margin-top: 10px; padding-top: 10px; display: none; }
-        .timeline { border-left: 2px solid #334155; margin-left: 10px; padding-left: 20px; margin-top: 15px; font-size: 13px; }
-        #painel-logs { height: 80px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; font-size: 11px; color: #34d399; font-family: monospace; overflow-y: auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0f19; color: #fff; }
+
+        /* Estilo da tela de login */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 2000; background: #0b0f19; }
+        .login-box { background: #1e293b; padding: 30px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #334155; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 6px; border: 1px solid #475569; background: #0b0f19; color: #fff; }
+        button { width: 100%; padding: 12px; border-radius: 6px; border: none; background: #38bdf8; font-weight: bold; cursor: pointer; }
+
+        /* Estilo do mapa (escondido inicialmente) */
+        #main-app { display: none; width: 100%; height: 100vh; }
+        #map { width: 100%; height: 100%; }
+        .painel-status { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.95); padding: 15px; border-radius: 12px; width: 300px; }
     </style>
 </head>
 <body>
 
-<div id="layout">
-    <div id="conteudo-principal">
-        <div class="painel">
-            <h3>📡 Lopes Cargas Nacional</h3>
-            <div class="input-group">
-                <input type="text" id="codigoInput" placeholder="Código ou Senha Adm">
-                <button onclick="processarAcesso()">Acessar</button>
-            </div>
-            
-            <div id="resultado-publico" style="display:none;">
-                <div id="transp-nome" style="color:#38bdf8; font-weight:bold;"></div>
-                <div id="status-atual"></div>
-                <div id="timeline" class="timeline"></div>
-            </div>
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>Lopes Cargas</h2>
+            <p style="font-size: 12px; color: #94a3b8; margin-top:5px;">Acompanhe sua carga em tempo real</p>
+            <input type="text" id="codigoInput" placeholder="Código de Rastreio ou Admin">
+            <button onclick="fazerLogin()">Acessar Monitoramento</button>
+        </div>
+    </div>
 
-            <div id="admin-view" class="admin-view">
-                <h4 style="color:#f59e0b;">📋 Painel Gerencial (Admin)</h4>
-                <p>Veículos monitorados: 12</p>
-                <p>Alertas de Rota: 0</p>
-                <button style="background:#dc2626; color:white; width:100%; margin-top:10px;">Exportar Relatório</button>
-            </div>
+    <div id="main-app">
+        <div class="painel-status">
+            <h3 id="titulo-painel">📡 Rastreamento</h3>
+            <div id="info-carga"></div>
+            <button onclick="location.reload()" style="background:#dc2626; color:white; margin-top:10px;">Sair</button>
         </div>
         <div id="map"></div>
     </div>
-    <div id="painel-logs">Sistema online.</div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    const mapa = L.map('map').setView([-12.0, -48.0], 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
-
-    const bancoDeDados = {
-        "BR2646431958792": { transportadora: "Shopee Xpress", status: "Em trânsito para SLZ", eventos: ["10/07: Em trânsito", "08/07: Curitiba"] }
-    };
-
-    function processarAcesso() {
-        const entrada = document.getElementById('codigoInput').value.trim().toUpperCase();
-        const log = document.getElementById('painel-logs');
-
-        // Lógica de Admin
-        if (entrada === "ADMIN123") {
-            document.getElementById('admin-view').style.display = 'block';
-            document.getElementById('resultado-publico').style.display = 'none';
-            log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Acesso administrativo concedido.`;
-        } 
-        // Lógica de Público
-        else if (bancoDeDados[entrada]) {
-            document.getElementById('admin-view').style.display = 'none';
-            document.getElementById('resultado-publico').style.display = 'block';
-            const info = bancoDeDados[entrada];
-            document.getElementById('transp-nome').innerText = "Transportadora: " + info.transportadora;
-            document.getElementById('status-atual').innerText = "Status: " + info.status;
-            document.getElementById('timeline').innerHTML = info.eventos.map(e => `<div>${e}</div>`).join('');
-            log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Rastreio: ${entrada}`;
-        } else {
-            alert("Código inválido ou sem autorização.");
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        function fazerLogin() {
+            const codigo = document.getElementById('codigoInput').value.trim().toUpperCase();
+            
+            // Simulação de acesso
+            if (codigo === "BR2646431958792" || codigo === "ADMIN123") {
+                // Esconde login e mostra o app
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                
+                // Inicia o mapa (necessário recarregar para o Leaflet renderizar)
+                setTimeout(() => {
+                    const map = L.map('map').setView([-16.68, -49.26], 6);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                    L.marker([-16.68, -49.26]).addTo(map).bindPopup("Carga em Trânsito").openPopup();
+                }, 100);
+            } else {
+                alert("Código inválido!");
+            }
         }
-    }
-</script>
+    </script>
 </body>
 </html>
