@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Lopes Cargas Nacional</title>
-    <meta name="description" content="Rastreamento de encomendas e cargas em tempo real da Lopes Cargas Nacional. Acompanhe sua entrega de Curitiba a São Luís.">
-    <meta name="google-site-verification" content="COLOQUE_AQUI_O_SEU_CODIGO_DE_VERIFICACAO" />
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html { width: 100%; height: 100%; font-family: 'Segoe UI', Arial, sans-serif; background: #0b0f19; color: #fff; overflow: hidden; }
         #layout { display: flex; width: 100%; height: 100vh; flex-direction: column; }
-        #conteudo-principal { display: flex; flex: 1; position: relative; width: 100%; height: calc(100vh - 140px); }
+        #conteudo-principal { display: flex; flex: 1; position: relative; width: 100%; height: calc(100vh - 170px); }
         #map { flex: 1; height: 100%; width: 100%; z-index: 1; }
         
         .painel-status { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; padding: 12px; border-radius: 12px; width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); max-height: 80vh; overflow-y: auto; }
@@ -21,14 +18,18 @@
         button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #007bff; color: white; font-weight: bold; }
         
         .caminhao-icon { font-size: 28px; text-shadow: 0 0 5px black; }
-        
         .timeline { border-left: 2px solid #334155; margin-left: 10px; padding-left: 20px; margin-top: 15px; }
         .timeline-item { margin-bottom: 15px; position: relative; font-size: 12px; }
         .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #38bdf8; border-radius: 50%; }
         
         #btnRastreioReal { display: none; margin-top: 10px; background: #28a745; padding: 8px; text-decoration: none; color: white; border-radius: 4px; text-align: center; font-weight: bold; font-size: 13px; }
-        #painel-logs { height: 140px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; }
-        .log-lista { height: 100px; overflow-y: auto; font-family: monospace; font-size: 10px; color: #34d399; }
+        #painel-logs { height: 110px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; }
+        .log-lista { height: 70px; overflow-y: auto; font-family: monospace; font-size: 10px; color: #34d399; }
+        
+        /* Faixa Inferior */
+        .ticker-wrap { width: 100%; background: #000; color: #38bdf8; overflow: hidden; white-space: nowrap; padding: 8px; font-size: 12px; border-top: 1px solid #333; font-weight: bold; }
+        .ticker { display: inline-block; animation: marquee 25s linear infinite; }
+        @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
         
         @media (max-width: 480px) { .painel-status { width: calc(100% - 20px); } }
     </style>
@@ -57,6 +58,11 @@
             <h4>💾 Servidor de Telemetria</h4>
             <div class="log-lista" id="log-lista"></div>
         </div>
+        <div class="ticker-wrap">
+            <div class="ticker">
+                LOPES CARGAS NACIONAL — RASTREAMENTO VIA SATÉLITE EM TEMPO REAL — STATUS: OPERACIONAL — ROTA: CURITIBA A SÃO LUÍS — SEGURANÇA E AGILIDADE EM SUAS ENTREGAS 🚚
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -65,11 +71,7 @@
             "BR2646431958792": {
                 status: "Em trânsito para São Luís - MA",
                 posicaoAtual: [-16.6869, -49.2648], 
-                trajeto: [
-                    [-25.4284, -49.2733], 
-                    [-16.6869, -49.2648], 
-                    [-2.5307, -44.3068]
-                ], 
+                trajeto: [[-25.4284, -49.2733], [-16.6869, -49.2648], [-2.5307, -44.3068]], 
                 eventos: [
                     { data: "10 Jul 2026 - 17:47", msg: "Em trânsito para: São Luís - MA" },
                     { data: "09 Jul 2026 - 16:36", msg: "Recebido no centro de triagem: Goiânia - GO" },
@@ -81,12 +83,7 @@
         const mapa = L.map('map').setView([-12.0, -48.0], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapa);
 
-        const caminhaoIcon = L.divIcon({
-            html: '<div class="caminhao-icon">🚚</div>',
-            className: 'custom-div-icon',
-            iconSize: [30, 30]
-        });
-
+        const caminhaoIcon = L.divIcon({ html: '<div class="caminhao-icon">🚚</div>', className: 'custom-div-icon', iconSize: [30, 30] });
         let marcadorCaminhao = null;
         let linhaTrajeto = null;
 
@@ -99,6 +96,9 @@
             const log = document.getElementById('log-lista');
 
             if (bancoDeDados[codigo]) {
+                // Toca som de bip ao localizar
+                new Audio('https://www.soundjay.com/buttons/sounds/button-10.mp3').play();
+                
                 const info = bancoDeDados[codigo];
                 container.style.display = "block";
                 btn.style.display = "none";
