@@ -45,7 +45,6 @@
                 </div>
                 
                 <div id="resultado-container" style="display:none;">
-                    <div id="transportadora-display" style="font-size: 14px; color: #f59e0b; margin-bottom: 5px; font-weight: bold;"></div>
                     <div id="status-display" style="margin-bottom:5px; font-weight:bold; color:#38bdf8;"></div>
                     <div id="timeline" class="timeline"></div>
                     <a id="btnRastreioReal" href="#" target="_blank">Rastrear em Rede Global</a>
@@ -64,7 +63,6 @@
     <script>
         const bancoDeDados = {
             "BR2646431958792": {
-                transportadora: "Shopee Xpress Brasil",
                 status: "Em trânsito para São Luís - MA",
                 posicaoAtual: [-16.6869, -49.2648], 
                 trajeto: [
@@ -97,7 +95,6 @@
             const container = document.getElementById('resultado-container');
             const timeline = document.getElementById('timeline');
             const statusDisplay = document.getElementById('status-display');
-            const transportadoraDisplay = document.getElementById('transportadora-display');
             const btn = document.getElementById('btnRastreioReal');
             const log = document.getElementById('log-lista');
 
@@ -105,8 +102,6 @@
                 const info = bancoDeDados[codigo];
                 container.style.display = "block";
                 btn.style.display = "none";
-                
-                transportadoraDisplay.innerText = "Transportadora: " + info.transportadora;
                 statusDisplay.innerText = "Status: " + info.status;
                 
                 timeline.innerHTML = info.eventos.map(e => `
@@ -120,13 +115,12 @@
                 if (linhaTrajeto) mapa.removeLayer(linhaTrajeto);
 
                 linhaTrajeto = L.polyline(info.trajeto, {color: '#f59e0b', weight: 4, dashArray: '10, 10'}).addTo(mapa);
-                marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>" + info.transportadora + ":</b> " + info.status).openPopup();
+                marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>Lopes Cargo:</b> " + info.status).openPopup();
                 
                 mapa.fitBounds(info.trajeto);
                 log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota carregada.</div>`;
             } else if (codigo.length > 5) {
                 container.style.display = "block";
-                transportadoraDisplay.innerText = "";
                 statusDisplay.innerText = "Buscando...";
                 timeline.innerHTML = "";
                 btn.href = `https://www.17track.net/pt/track?nums=${codigo}`;
