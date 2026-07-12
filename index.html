@@ -23,10 +23,11 @@
         .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #38bdf8; border-radius: 50%; }
         
         #btnRastreioReal { display: none; margin-top: 10px; background: #28a745; padding: 8px; text-decoration: none; color: white; border-radius: 4px; text-align: center; font-weight: bold; font-size: 13px; }
+        #empresa-display { font-size: 14px; color: #f59e0b; margin-bottom: 8px; font-weight: bold; }
+        
         #painel-logs { height: 110px; background: #090d16; border-top: 2px solid #1e293b; padding: 10px; }
         .log-lista { height: 70px; overflow-y: auto; font-family: monospace; font-size: 10px; color: #34d399; }
         
-        /* Faixa Inferior */
         .ticker-wrap { width: 100%; background: #000; color: #38bdf8; overflow: hidden; white-space: nowrap; padding: 8px; font-size: 12px; border-top: 1px solid #333; font-weight: bold; }
         .ticker { display: inline-block; animation: marquee 25s linear infinite; }
         @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
@@ -46,6 +47,7 @@
                 </div>
                 
                 <div id="resultado-container" style="display:none;">
+                    <div id="empresa-display"></div>
                     <div id="status-display" style="margin-bottom:5px; font-weight:bold; color:#38bdf8;"></div>
                     <div id="timeline" class="timeline"></div>
                     <a id="btnRastreioReal" href="#" target="_blank">Rastrear em Rede Global</a>
@@ -60,15 +62,17 @@
         </div>
         <div class="ticker-wrap">
             <div class="ticker">
-                TUBARAOZIN E VIADINHO
+                LOPES CARGAS NACIONAL — PARCERIAS: SHOPEE XPRESS, CORREIOS, JADLOG, AZUL CARGO — MONITORAMENTO VIA SATÉLITE EM TEMPO REAL — STATUS: OPERACIONAL 🚚
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Adicione novas empresas aqui mudando o campo 'transportadora'
         const bancoDeDados = {
             "BR2646431958792": {
+                transportadora: "Shopee Xpress",
                 status: "Em trânsito para São Luís - MA",
                 posicaoAtual: [-16.6869, -49.2648], 
                 trajeto: [[-25.4284, -49.2733], [-16.6869, -49.2648], [-2.5307, -44.3068]], 
@@ -92,16 +96,18 @@
             const container = document.getElementById('resultado-container');
             const timeline = document.getElementById('timeline');
             const statusDisplay = document.getElementById('status-display');
+            const empresaDisplay = document.getElementById('empresa-display');
             const btn = document.getElementById('btnRastreioReal');
             const log = document.getElementById('log-lista');
 
             if (bancoDeDados[codigo]) {
-                // Toca som de bip ao localizar
                 new Audio('https://www.soundjay.com/buttons/sounds/button-10.mp3').play();
                 
                 const info = bancoDeDados[codigo];
                 container.style.display = "block";
                 btn.style.display = "none";
+                
+                empresaDisplay.innerText = "Transportadora: " + info.transportadora;
                 statusDisplay.innerText = "Status: " + info.status;
                 
                 timeline.innerHTML = info.eventos.map(e => `
@@ -118,10 +124,11 @@
                 marcadorCaminhao = L.marker(info.posicaoAtual, {icon: caminhaoIcon}).addTo(mapa).bindPopup("<b>Lopes Cargo:</b> " + info.status).openPopup();
                 
                 mapa.fitBounds(info.trajeto);
-                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota carregada.</div>`;
+                log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${codigo}: Rota carregada (${info.transportadora}).</div>`;
             } else if (codigo.length > 5) {
                 container.style.display = "block";
-                statusDisplay.innerText = "Buscando...";
+                empresaDisplay.innerText = "Empresa: Não identificada";
+                statusDisplay.innerText = "Buscando rede global...";
                 timeline.innerHTML = "";
                 btn.href = `https://www.17track.net/pt/track?nums=${codigo}`;
                 btn.style.display = "block";
